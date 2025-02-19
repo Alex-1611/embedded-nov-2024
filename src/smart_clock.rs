@@ -21,6 +21,7 @@
 #![no_std]
 #![no_main]
 
+use embassy_rp::i2c::{self, Config};
 use defmt::*;
 use embassy_executor::Spawner;
 use embassy_time::Timer;
@@ -31,6 +32,7 @@ use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::pixelcolor::{Rgb565, RgbColor};
 use embedded_graphics::text::Text;
 use embedded_graphics::Drawable;
+use embedded_nov_2024::bmp280::{BMP280,Control};
 use embedded_nov_2024::display::SPIDeviceInterface;
 use {defmt_rtt as _, panic_probe as _};
 
@@ -100,7 +102,18 @@ async fn main(_spawner: Spawner) {
 
     // Clear display
     display.clear(Rgb565::BLACK).unwrap();
-    loop {
-        Timer::after_secs(1).await;
+
+
+    let sda = peripherals.PIN_20;
+    let scl = peripherals.PIN_21;
+
+    let i2c = i2c::I2c::new_blocking(peripherals.I2C0, scl, sda, Config::default());
+    let mut senzor = BMP280::new(i2c).unwrap();
+    senzor.set_control(Control{osrs_t: embedded_nov_2024::bmp280::Oversampling::x2, osrs_p : embedded_nov_2024::bmp280::Oversampling::x2, mode : embedded_nov_2024::bmp280::PowerMode::Normal,});
+    loop{
+        let temp = senzor.temp();
+        let tempstr : str = format!("{}", temp);
+        Text::new(, Point::new(36, 190), style);
+        Timer::after_secs(2).await;
     }
 }

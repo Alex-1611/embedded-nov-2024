@@ -27,8 +27,32 @@ use {defmt_rtt as _, panic_probe as _};
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
+      
 
-    // TODO 0 : Create the Config for the PWM that will drive the RGB LED.
-
+    let mut pwm1 = Pwm::new_output_ab(p.PWM_SLICE0, p.PIN_0, p.PIN_1, embassy_rp::pwm::Config::default());
+    let mut pwm2 = Pwm::new_output_a(p.PWM_SLICE1, p.PIN_2, embassy_rp::pwm::Config::default());
     // TODO 1 : Modify the RGB values and loop through the configs to create a transition.
+    loop{
+        let mut configrg = embassy_rp::pwm::Config::default();
+        configrg.top = 255;
+        configrg.compare_a = 0;
+        configrg.compare_b = 255;
+        pwm1.set_config(&configrg);
+        
+        let mut configb = embassy_rp::pwm::Config::default();
+        configb.compare_a = 255;
+        configb.top = 255; 
+        pwm2.set_config(&configb);
+
+        Timer::after_secs(3).await;
+
+        configrg.compare_a = 255;
+        configrg.compare_b = 0;
+        
+        configb.compare_a = 255;
+
+        pwm1.set_config(&configrg);
+        pwm2.set_config(&configb);
+        Timer::after_secs(3).await;
+    }
 }
